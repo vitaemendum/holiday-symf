@@ -1,0 +1,127 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div>
+        <h1>Holiday Search</h1>
+        {{ form_start(form, {'id': 'form'}) }}
+        {{ form_errors(form) }}
+        <div>
+            {{ form_row(form.country, {'id': 'country'}) }}
+        </div>
+        <div>
+            <div id="loadingText">Loading year options...</div>
+
+            {{ form_row(form.year, {'id': 'year'}) }}
+        </div>
+        <div>
+            {{ form_row(form.search, {'id': 'search-button'}) }}
+        </div>
+        {{ form_end(form) }}        
+    </div>
+
+    {% if holidaysByMonth is defined and holidaysByMonth|length > 0 %}
+        {% if currentDayStatus %}
+            <h2>Current Day Status</h2>
+            <div>
+                {% if currentDayStatus.isWorkDay %}
+                    <p>Today is a Work Day.</p>
+                {% elseif currentDayStatus.isPublicHoliday %}
+                    <p>Today is a Public Holiday.</p>
+                {% elseif currentDayStatus.isSchoolHoliday %}
+                    <p>Today is a School Holiday.</p>
+                {% else %}
+                    <p>Today is a Weekend or Unknown Holiday.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% for month, monthHolidays in holidaysByMonth %}
+            <div>
+                <h3>{{ month | date('F') }}</h3>
+                <ul>
+                    {% for holiday in monthHolidays %}
+                        <li>
+                            <span>
+                                {% if holiday.name|length > 1 %}
+                                    {{ holiday.name[1].text }}
+                                {% else %}
+                                    {{ holiday.name[0].text }}
+                                {% endif %}
+                            </span>
+                            <span>{{ holiday.holidayType }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const countrySelect = document.getElementById('country');
+            const yearSelect = document.getElementById('year');
+            const loadingText = document.getElementById('loadingText');
+            const searchButton = document.getElementById('search-button');
+
+            function setLoadingState(isLoading) {
+                if (isLoading) {
+                    loadingText.style.display = 'block';
+                    yearSelect.style.display = 'none';
+                    searchButton.disabled = true; 
+                } else {
+                    loadingText.style.display = 'none';
+                    yearSelect.style.display = 'block';
+                    searchButton.disabled = false;
+                }
+            }
+
+            function updateYearDropdown() {
+                setLoadingState(true); 
+
+                const selectedCountry = countrySelect.value;
+                const url = yearSelect.getAttribute('data-url').replace('/ago', '');
+
+                fetch(`${url}/${selectedCountry}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+
+                    const yearOptions = [];
+                    for (const year in data) {
+                        if (data.hasOwnProperty(year)) {
+                            yearOptions[year] = data[year];
+                        }
+                    }
+
+                    yearSelect.innerHTML = '';
+
+                    for (const value in yearOptions) {
+                        if (yearOptions.hasOwnProperty(value)) {
+                            const option = document.createElement('option');
+                            option.value = value;
+                            option.text = yearOptions[value];
+                            yearSelect.appendChild(option);
+                        }
+                    }
+
+                    setLoadingState(false);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    setLoadingState(false); 
+                });
+
+            }
+
+            countrySelect.addEventListener('change', updateYearDropdown);
+
+            updateYearDropdown();
+        });
+    </script>
+{% endblock %}
