@@ -22,20 +22,16 @@ Follow these steps to set up and run your Symfony application with Redis caching
 -   `cd holiday-symf/app` 
     
 2. **Install Dependencies:**
-    
+
 - Use Composer to install the project's PHP dependencies:
     
     `composer install` 
     
 3.   **Redis Configuration:**
     
-   - By default, Symfony uses Redis for caching. Ensure Redis is running on your machine. You don't need to configure it explicitly for Symfony; Symfony will use the default configuration.
+   - By default, Symfony uses Redis for caching. Ensure Redis is running on your machine. Edit your .env file with `REDIS_URL` 
     
-4.   **Database Configuration (Optional):**
-    
-   - This application may have a PostgreSQL database setup, but it might not be actively used. You can ignore this step if you're solely interested in the Redis configuration.
-    
-5.   **Run the Symfony Application:**
+4.   **Run the Symfony Application:**
     
    - Start the Symfony development server
     	`symfony server:start` 
