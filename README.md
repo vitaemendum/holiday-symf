@@ -19,7 +19,7 @@ Follow these steps to set up and run your Symfony application with Redis caching
 1.  **Clone the Repository:**
     
 -  `git clone https://github.com/vitaemendum/holiday-symf.git`
--   `cd holiday-symf` 
+-   `cd holiday-symf/app` 
     
 2. **Install Dependencies:**
     
