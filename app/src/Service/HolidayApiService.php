@@ -4,7 +4,6 @@ namespace App\Service;
 
 use DateTime;
 use Exception;
-use Psr\Cache\InvalidArgumentException;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
@@ -53,7 +52,6 @@ class HolidayApiService
 
     public function fetchCurrentDayStatus($country)
     {
-        
         $cacheKey = 'day_status_' . $country;
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($country) {
@@ -89,8 +87,16 @@ class HolidayApiService
             
                     $trueValues[$endpoint] = $value;
                 }
-    
-                return $trueValues;
+                
+                if ($trueValues['isWorkDay']){
+                    return "Today is a Work Day.";
+                } else if ($trueValues['isPublicHoliday']){
+                    return "Today is a Public Holiday.";
+                } else if ($trueValues['isSchoolHoliday']){
+                    return "Today is a School Holiday.";
+                } else {
+                    return "Today is a Weekend or Unknown Holiday.";
+                }
             } catch (TransportExceptionInterface $e) {
                 return [
                     'error' => 'Transport Exception: ' . $e->getMessage(),
@@ -103,7 +109,6 @@ class HolidayApiService
         });
        
     }
-
 
     public function fetchCountries()
     {

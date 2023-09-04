@@ -23,15 +23,7 @@
         {% if currentDayStatus %}
             <h2>Current Day Status</h2>
             <div>
-                {% if currentDayStatus.isWorkDay %}
-                    <p>Today is a Work Day.</p>
-                {% elseif currentDayStatus.isPublicHoliday %}
-                    <p>Today is a Public Holiday.</p>
-                {% elseif currentDayStatus.isSchoolHoliday %}
-                    <p>Today is a School Holiday.</p>
-                {% else %}
-                    <p>Today is a Weekend or Unknown Holiday.</p>
-                {% endif %}
+                <p> {{ currentDayStatus }}</p>
             </div>
         {% endif %}
 
