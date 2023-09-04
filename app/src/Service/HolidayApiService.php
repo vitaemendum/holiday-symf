@@ -5,47 +5,33 @@ namespace App\Service;
 use DateTime;
 use Exception;
 use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-class HolidayApiService
+class HolidayApiService implements HolidayApiServiceInterface
 {
-    private HttpClientInterface $httpClient;
-    private CacheInterface $cache;
+    private const BASE_ENDPOINT_URL = 'https://kayaposoft.com/enrico/json/v3.0/';
+    private const GET_HOLIDAY_URL = self::BASE_ENDPOINT_URL . 'getHolidaysForYear';
+    private const GET_SUPPORTED_COUNTRIES_URL = self::BASE_ENDPOINT_URL . 'getSupportedCountries';
 
-    public function __construct(HttpClientInterface $httpClient, CacheInterface $cache)
-    {
-        $this->httpClient = $httpClient;
-        $this->cache = $cache;
+    public function __construct(
+        private readonly CacheInterface $cache,
+        private readonly ClientServiceInterface $client,
+    ){
     }
-
 
     public function fetchHolidaysForYear( string $country, string $year): array
     {
         $cacheKey = 'holidays_' . $country . '_' . $year;
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($country, $year) {
-            $endOfDay = new DateTime();
-            $item->expiresAt($endOfDay->setTime(23,59,59));
-            try {
-                $response = $this->httpClient->request('GET', 'https://kayaposoft.com/enrico/json/v3.0/getHolidaysForYear', [
-                    'query' => [
-                        'year' => $year,
-                        'country' => $country,
-                    ],
-                ]);
+            $this->setCacheExpiration($item);
 
-                if ($response->getStatusCode() !== 200) {
-                    throw new Exception('API request failed with status code ' . $response->getStatusCode());
-                }
-
-                return $response->toArray();
-            } catch (TransportExceptionInterface $e) {
-                throw new Exception('Transport Exception: ' . $e->getMessage());
-            } catch (Exception $e) {
-                throw new Exception('Error: ' . $e->getMessage());
-            }
+            return $this->client->request(self::GET_HOLIDAY_URL, [
+                'query' => [
+                    'year' => $year,
+                    'country' => $country,
+                ],
+            ]);
         });
     }
 
@@ -55,59 +41,40 @@ class HolidayApiService
         $cacheKey = 'day_status_' . $country;
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($country) {
-            $endOfDay = new DateTime();
-            $item->expiresAt($endOfDay->setTime(23,59,59));
-            
+            $this->setCacheExpiration($item);
+
             $endpoints = [
-                'isPublicHoliday',
-                'isSchoolHoliday',
                 'isWorkDay',
-            ];  
+                'isPublicHoliday',
+                'isSchoolHoliday'
+            ];
             $currentDayDate = new DateTime();
             $currentDayDate = $currentDayDate->format('Y-m-d');
 
-            $trueValues = [];
-            try {
-                foreach ($endpoints as $endpoint) {
-                    $response = $this->httpClient->request('GET', 'https://kayaposoft.com/enrico/json/v3.0/' . $endpoint, [
+            foreach ($endpoints as $endpoint) {
+                $response = $this->client->request(self::BASE_ENDPOINT_URL.$endpoint,
+                    [
                         'query' => [
                             'date' => $currentDayDate,
                             'country' => $country,
                         ],
-                    ]);
-    
-                    if ($response->getStatusCode() !== 200) {
-                        throw new Exception('API request failed with status code ' . $response->getStatusCode());
-                    }
-    
-                    $content = $response->getContent();
-                    $result = json_decode($content, true);
-    
-                    $value = $result[$endpoint];
-            
-                    $trueValues[$endpoint] = $value;
+                    ]
+                );
+
+                $value = $response;
+
+                if ($value){
+                    break;
                 }
-                
-                if ($trueValues['isWorkDay']){
-                    return "Today is a Work Day.";
-                } else if ($trueValues['isPublicHoliday']){
-                    return "Today is a Public Holiday.";
-                } else if ($trueValues['isSchoolHoliday']){
-                    return "Today is a School Holiday.";
-                } else {
-                    return "Today is a Weekend or Unknown Holiday.";
-                }
-            } catch (TransportExceptionInterface $e) {
-                return [
-                    'error' => 'Transport Exception: ' . $e->getMessage(),
-                ];
-            } catch (Exception $e) {
-                return [
-                    'error' => 'Error: ' . $e->getMessage(),
-                ];
             }
+
+            return match (true) {
+                $value['isWorkDay'] => "Today is a Work Day.",
+                $value['isPublicHoliday'] => "Today is a Public Holiday.",
+                $value['isSchoolHoliday'] => "Today is a School Holiday.",
+                default => "Today is a Weekend or Unknown Holiday.",
+            };
         });
-       
     }
 
     public function fetchCountries(): array
@@ -115,34 +82,18 @@ class HolidayApiService
         $cacheKey = 'all_countries';
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) {
-            $endOfDay = new DateTime();
-            $item->expiresAt($endOfDay->setTime(23,59,59));
-            $countryList = [];
-            try {
-                $response = $this->httpClient->request('GET', 'https://kayaposoft.com/enrico/json/v3.0/getSupportedCountries');
-            
-                if ($response->getStatusCode() !== 200) {
-                    throw new Exception('API request failed with status code ' . $response->getStatusCode());
-                }
-            
-                $data = $response->toArray();
+            $this->setCacheExpiration($item);
 
-                if ($data) {
-                    foreach ($data as $country) {
-                        $countryList[$country['fullName']] = $country['countryCode'];
-                    }
+            $countryList = [];
+            $data = $this->client->request(self::GET_SUPPORTED_COUNTRIES_URL);
+
+            if ($data) {
+                foreach ($data as $country) {
+                    $countryList[$country['fullName']] = $country['countryCode'];
                 }
-            
-                return $countryList;
-            } catch (TransportExceptionInterface $e) {
-                return [
-                    'error' => 'Transport Exception: ' . $e->getMessage(),
-                ];
-            } catch (Exception $e) {
-                return [
-                    'error' => 'Error: ' . $e->getMessage(),
-                ];
             }
+
+            return $countryList;
         });
     }
 
@@ -152,16 +103,9 @@ class HolidayApiService
         $cacheKey = 'holidays_year_range_' . $country;
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($country) {
-            $endOfDay = new DateTime();
-            $item->expiresAt($endOfDay->setTime(23,59,59));
-            try {
-                $response = $this->httpClient->request('GET', 'https://kayaposoft.com/enrico/json/v3.0/getSupportedCountries');
+            $this->setCacheExpiration($item);
+            $data = $this->client->request(self::GET_SUPPORTED_COUNTRIES_URL);
 
-                if ($response->getStatusCode() !== 200) {
-                    throw new Exception('API request failed with status code ' . $response->getStatusCode());
-                }
-
-                $data = $response->toArray();
                 $countryInfo = null;
                 $fromDate = null;
                 $toDate = null;
@@ -184,15 +128,12 @@ class HolidayApiService
                     $yearChoices[$year] = $year;
                 }
                 return $yearChoices;
-            } catch (TransportExceptionInterface $e) {
-                return [
-                    'error' => 'Transport Exception: ' . $e->getMessage(),
-                ];
-            } catch (Exception $e) {
-                return [
-                    'error' => 'Error: ' . $e->getMessage(),
-                ];
-            }
         });
+    }
+
+    private function setCacheExpiration(ItemInterface $item): void
+    {
+        $endOfDay = new DateTime();
+        $item->expiresAt($endOfDay->setTime(23, 59, 59));
     }
 }

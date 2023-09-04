@@ -3,7 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Holiday;
-use App\Service\HolidayApiService;
+use App\Service\HolidayApiServiceInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -15,13 +15,8 @@ use Symfony\Component\Form\FormEvents;
 
 class HolidaySearchFormType extends AbstractType
 {
-    private HolidayApiService $apiService;
-    private RouterInterface $router;
-
-    public function __construct(HolidayApiService $apiService, RouterInterface $router)
+    public function __construct(private readonly HolidayApiServiceInterface $apiService, private readonly RouterInterface $router)
     {
-        $this->apiService = $apiService;
-        $this->router = $router;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -32,7 +27,7 @@ class HolidaySearchFormType extends AbstractType
                 'label' => 'Select Country',
                 'required' => true,
                 'attr' => ['class' => 'country'],
-            ])         
+            ])
             ->addEventListener(
                 FormEvents::PRE_SUBMIT,
                 function (FormEvent $event) {
@@ -52,7 +47,7 @@ class HolidaySearchFormType extends AbstractType
                         'required' => true,
                         'attr' => [
                             'class' => 'year',
-                            'data-url' => $this->router->generate('get_holiday_date_range', ['country' => 'ago']), 
+                            'data-url' => $this->router->generate('get_holiday_date_range', ['country' => 'ago']),
                         ],
                     ]);
                 }
@@ -77,9 +72,9 @@ class HolidaySearchFormType extends AbstractType
                 'label' => 'Search Holidays',
             ]);
     }
-    
 
-    
+
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([

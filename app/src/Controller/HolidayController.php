@@ -2,24 +2,19 @@
 
 namespace App\Controller;
 
-use App\Service\HolidayService;
+use App\Service\HolidayApiServiceInterface;
+use App\Service\HolidayServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Form\HolidaySearchFormType;
-use App\Service\HolidayApiService;
 use Symfony\Component\HttpFoundation\Response;
 
 class HolidayController extends AbstractController
 {
-    private HolidayService $holidayService;
-    private HolidayApiService $holidayApiService;
-
-    public function __construct(HolidayService $holidayService, HolidayApiService $holidayApiService)
+    public function __construct(private readonly HolidayServiceInterface $holidayService,private readonly  HolidayApiServiceInterface $holidayApiService)
     {
-        $this->holidayService = $holidayService;
-        $this->holidayApiService = $holidayApiService;
     }
 
     #[Route('/', name: 'app_holiday')]
@@ -27,10 +22,6 @@ class HolidayController extends AbstractController
     {
         $form = $this->createForm(HolidaySearchFormType::class);
         $form->handleRequest($request);
-        //dd($form->handleRequest($request));
-
-        $holidaysByMonth = [];
-        $currentDayStatus = "";
 
         if ($form->isSubmitted() && $form->isValid()) {
             $holidaysByMonth = $this->holidayService->fetchHolidaysByMonth($request);
@@ -39,8 +30,8 @@ class HolidayController extends AbstractController
 
         return $this->render('holiday/index.html.twig', [
             'form' => $form->createView(),
-            'holidaysByMonth' => $holidaysByMonth,
-            'currentDayStatus' => $currentDayStatus,
+            'holidaysByMonth' => $holidaysByMonth ?? [],
+            'currentDayStatus' => $currentDayStatus ?? '',
         ]);
     }
 

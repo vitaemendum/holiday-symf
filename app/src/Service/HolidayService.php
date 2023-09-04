@@ -5,18 +5,18 @@ namespace App\Service;
 use DateTime;
 use Symfony\Component\HttpFoundation\Request;
 
-class HolidayService
+class HolidayService implements HolidayServiceInterface
 {
-    private HolidayApiService $holidayApiService;
-
-    public function __construct(HolidayApiService $holidayApiService)
+    public function __construct(private readonly HolidayApiServiceInterface $holidayApiService)
     {
-        $this->holidayApiService = $holidayApiService;
     }
 
     public function fetchHolidaysByMonth(Request $request): array
     {
         $formData = $request->request->all();
+        if (!isset($formData['holiday_search_form'])){
+            return [];
+        }
         $country = $formData['holiday_search_form']['country'];
         $year = $formData['holiday_search_form']['year'];
 
