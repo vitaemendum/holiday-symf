@@ -2,20 +2,18 @@
 
 namespace App\Controller;
 
-use App\Entity\Holiday;
+use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Doctrine\ORM\EntityManagerInterface;
 use App\Form\HolidaySearchFormType;
 use App\Service\HolidayApiService;
 use Symfony\Component\HttpFoundation\Response;
-use Psr\Log\LoggerInterface;
 
 class HolidayController extends AbstractController
 {
-    private $holidayApiService;
+    private HolidayApiService $holidayApiService;
 
     public function __construct(HolidayApiService $holidayApiService)
     {
@@ -32,18 +30,16 @@ class HolidayController extends AbstractController
         $currentDayStatus = [];
         
         if ($form->isSubmitted() && $form->isValid()) {
-            $fieldErrors = $form->get('year')->getErrors(true, false);
-            
             $country = $form->get('country')->getData();
             $year = $form->get('year')->getData();
-            
+        
             $data = $this->holidayApiService->fetchHolidaysForYear($country, $year);
             $currentDayStatus = $this->holidayApiService->fetchCurrentDayStatus($country);
             
             foreach ($data as $holiday) {
                 
                 $monthNumber = $holiday['date']['month'];
-                $dateObject = new \DateTime("$year-$monthNumber");
+                $dateObject = new DateTime("$year-$monthNumber");
                 $holidaysByMonth[$dateObject->format('Y-m')][] = $holiday;              
             }
         }

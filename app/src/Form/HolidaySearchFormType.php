@@ -15,8 +15,8 @@ use Symfony\Component\Form\FormEvents;
 
 class HolidaySearchFormType extends AbstractType
 {
-    private $apiService;
-    private $router;
+    private HolidayApiService $apiService;
+    private RouterInterface $router;
 
     public function __construct(HolidayApiService $apiService, RouterInterface $router)
     {
@@ -38,7 +38,9 @@ class HolidaySearchFormType extends AbstractType
                 function (FormEvent $event) {
                     $form = $event->getForm();
                     $data = $event->getData();
-                    
+
+                    $years = [];
+
                     if (isset($data['country'])) {
                         $country = $data['country'];
                         $years = $this->apiService->fetchHolidaysRange($country);

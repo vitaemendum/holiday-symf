@@ -4,7 +4,6 @@ namespace App\Entity;
 
 use App\Repository\HolidayRepository;
 use DateTime;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: HolidayRepository::class)]
@@ -25,10 +24,10 @@ class Holiday
     private array $data = [];
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTime $createdAt = null;
+    private ?DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTime $updatedAt = null;
+    private ?DateTime $updatedAt = null;
 
     public function getId(): ?int
     {
@@ -71,24 +70,24 @@ class Holiday
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): ?DateTime
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTime $createdAt): static
+    public function setCreatedAt(DateTime $createdAt): static
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTime
+    public function getUpdatedAt(): ?DateTime
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTime $updatedAt): static
+    public function setUpdatedAt(DateTime $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
 
