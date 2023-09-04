@@ -14,7 +14,7 @@ class HolidayService
         $this->holidayApiService = $holidayApiService;
     }
 
-    public function fetchHolidaysByMonth(Request $request)
+    public function fetchHolidaysByMonth(Request $request): array
     {
         $formData = $request->request->all();
         $country = $formData['holiday_search_form']['country'];
@@ -32,7 +32,7 @@ class HolidayService
         return $holidaysByMonth;
     }
 
-    public function fetchCurrentDayStatus(Request $request)
+    public function fetchCurrentDayStatus(Request $request): string
     {
         $formData = $request->request->all();
         $country = $formData['holiday_search_form']['country'];

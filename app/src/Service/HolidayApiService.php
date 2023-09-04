@@ -21,7 +21,7 @@ class HolidayApiService
     }
 
 
-    public function fetchHolidaysForYear($country, $year)
+    public function fetchHolidaysForYear( string $country, string $year): array
     {
         $cacheKey = 'holidays_' . $country . '_' . $year;
 
@@ -50,7 +50,7 @@ class HolidayApiService
     }
 
 
-    public function fetchCurrentDayStatus($country)
+    public function fetchCurrentDayStatus(string $country): string
     {
         $cacheKey = 'day_status_' . $country;
 
@@ -110,7 +110,7 @@ class HolidayApiService
        
     }
 
-    public function fetchCountries()
+    public function fetchCountries(): array
     {
         $cacheKey = 'all_countries';
 
@@ -147,7 +147,7 @@ class HolidayApiService
     }
 
 
-    public function fetchHolidaysRange($country)
+    public function fetchHolidaysRange(string $country): array
     {
         $cacheKey = 'holidays_year_range_' . $country;
 
